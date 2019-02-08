@@ -3,6 +3,7 @@ The visualization has three elements in it as follows,
 1. The bubble plot representation.
 2. The check box list.
 3. Bar graph of 12 pillars for selected two countries.
+
 In the first part, we have created a bubble plot wherein the x axis represents the GDP, the Y
 axis represents the Global Competitive Index and the radius of the circle represents the total
 population of the country.
