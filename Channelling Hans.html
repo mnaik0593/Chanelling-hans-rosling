@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang = "en" class="tas-com">
+<head>
+	<meta charset="utf-8">
+	<title>D3: Transitions In D3</title>
+	<link href="./themes/prism.css" rel="stylesheet" />
+	<link href="./themes/tas_style.css" rel="stylesheet" />
+	<script src="https://d3js.org/d3.v3.min.js"></script>
+	<script src="./lib/prism.js" charset="utf-8"></script>
+	<style type="text/css">
+		.axis path,
+		.axis line {
+		   fill: none;
+			 stroke: black;
+       shape-rendering: crispEdges;
+		}
+		.axis text {
+			 font-family: sans-serif;
+			 font-size: 11px;
+		}
+    .year {
+    	font-size: 190px;
+    	font-family: monospace;
+    	font-variant-numeric: proportional-nums;
+    	opacity: 0.3
+		}
+		.cntry {
+			font-size: 50px;
+			font-family: monospace;
+			font-variant-numeric: proportional-nums;
+			opacity: 0.3
+		}
+		.playpauseBtn {
+			position:relative;
+		  transition: .5s ease;
+		  top: 540px;
+		  left: 310px;
+		  right: -420px;
+		  bottom: -191px;
+		  cursor: pointer;
+		}
+		.slider {
+			position:relative;
+			cursor: pointer;
+			width: 560px;
+			stroke: black;
+			top: 510px;
+			left: 400px;
+			right: -420px;
+			bottom: -191px;
+		}
+		 .sliderticks {
+			 display: flex;
+			 justify-content: space-between;
+			 padding: 0 10px;
+		}
+		 .sliderticks p {
+			 display: flex;
+			 left: 50px;
+			 justify-content: center;
+			 text-align: center;
+			 width: 1px;
+			 background: black;
+			 height: 10px;
+			 line-height: 40px;
+			 margin: 0 0 15px 0;
+		 }
+		 .countrySelect{
+			 float: left;
+			 width: 200px;
+			 height: 500px;
+			 overflow-y: scroll;
+		 }
+		 .pillar2 {
+ 			 position:relative;
+ 	     transition: .5s ease;
+ 	     top: 30px;
+ 	     left: 1080px;
+ 	     right: -420px;
+ 	     bottom: -191px;
+ 			 cursor: pointer;
+ 		 }
+</style>
+</head>
+<body>
+	<h1>Channelling Hans Rosling</h1>
+	<!-- Creating the play pause button -->
+	<div id = "A1">
+		<div class="playpauseBtn">
+			<button type="submit" style="background-color:transparent; border-color:transparent;" id="playpauseBtn";>
+					<img src="btnPlay.png" style="height:35px;width:35px" alt="Submit">
+			</button>
+		</div>
+
+	<!-- creating a slider to select individual year -->
+		<div class="slider" >
+		 	<input type="range" id="year" value="2007" min="2007" max="2017" oninput="sliderValue(this.value)" style="width: 550px; border-color:black;" ;>
+		 		<div class = "sliderticks">
+			 		<p style="left: 150;">2007</p>
+			 		<p>2008</p>
+			 		<p>2009</p>
+			 		<p>2010</p>
+			 		<p>2011</p>
+			 		<p>2012</p>
+			 		<p>2013</p>
+			 		<p>2014</p>
+			 		<p>2015</p>
+			 		<p>2016</p>
+			 		<p>2017</p>
+		 		</div>
+	 	</div>
+		<script>
+	  d3.select("#A1").append("img")
+	 		.attr("src", "countryColor.png")
+	 		.attr("width", 250)
+	 		.attr("height", 400)
+			.style("width", "250px")
+	  </script>
+	</div>
+	<div id = "A2">
+	</div>
+	<div id = "A3">
+	</div>
+
+	<div class = "demo">
+		<script type="text/javascript">
+			var selected_country = [];
+			var countrySelect = [];
+			var checkedArr = [];
+		  var click  = 0
+			// Define margins
+			var margin = {top: 10, right: 30, bottom: 60, left: 60};
+
+			//Width and height
+			var outer_width  = 740;
+			var outer_height = 450;
+			var svg_width = outer_width - margin.left - margin.right;
+			var svg_height = outer_height - margin.top - margin.bottom;
+			var playpauseFlag = 0
+
+			//Create SVG element for bubble plot
+			var svg = d3.select("#A1")
+						.append("svg")
+						.attr("width", svg_width + margin.left + margin.right + 300)
+						.attr("height", svg_height + margin.top + margin.bottom)
+						.append("g")
+						.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+			//Create SVG element for Check box.
+			var svg1 = d3.select("#A1")
+						.append("svg")
+						.attr("width", 350)
+						.attr("height", svg_height + margin.top + margin.bottom)
+						.append("g")
+						.attr("transform", "translate(" + -10 + "," + margin.top + ")");
+
+			//Create SVG element for multivarient graph1
+			var svg2 = d3.select("#A2")
+						.append("svg")
+						.attr("width", svg_width + margin.left + margin.right)
+						.attr("height", svg_height + margin.top + 130)
+						.append("g")
+						.attr("transform", "translate(" + 110 + "," + 100 + ")");
+
+			//Create SVG element for multivarient graph2
+			var svg3 = d3.select("#A3")
+						.append("svg")
+						.attr("width", svg_width + margin.left + margin.right)
+						.attr("height", svg_height + margin.top + 500)
+						.append("g")
+						.attr("transform", "translate(" + 110 + "," + 100 + ")");
+
+      // Set the initial years to be displayed.
+      display_year = 2007;
+
+      // function to filter data by year
+      function yearFilter(value) {
+				return(value.Year == display_year)
+        console.log(value.year)
+			}
+
+			// function to filter data by country
+			function countryFilter(value){
+				return (value.Country == country)
+			}
+
+      // Linear scale for population on radius
+      var rScale = d3.scale.linear()
+                     .domain([90841, 1386395000])
+                     .range([2.5, 75]);
+
+			// Log scale for GDP
+			var xScale = d3.scale.log()
+										 .domain([500,256000])
+									   .range([0, svg_width ]);
+
+			// Linear scale for Global competitive index
+			var yScale = d3.scale.linear()
+								     .domain([0, 8])
+								     .range([svg_height, 0]);
+
+			//ordinal x scale for the two bar graphs
+		 	var xScale1 = d3.scale.ordinal()
+										  .rangeRoundBands([0, svg_width ],0.1);
+
+			//linear y scale for the two bar graphs
+			var yScale1 = d3.scale.linear()
+								      .domain([0, 8])
+								      .range([svg_height, 0]);
+
+			//Define X axis
+			var xTickValues = [0, 1000, 2000, 4000, 8000, 16000, 32000, 64000, 128000, 256000];
+			var xAxis = d3.svg.axis()
+					          .scale(xScale)
+					          .tickValues(xTickValues)
+					          .innerTickSize([3])
+					          .outerTickSize([0])
+					          .tickFormat(d3.format(".1s"))
+					          .orient("bottom");
+
+			//Define x axis for bar graphs
+			var xAxis1 = d3.svg.axis()
+						         .scale(xScale1)
+			               .orient("bottom")
+
+      // Text label for the x axis
+      svg.append("text")
+         .attr("x", svg_width / 3 + margin.left)
+         .attr("y", svg_height + margin.bottom - 23)
+         .style("text-anchor", "middle")
+         .attr("font-family", "Comic Sans Ms")
+         .text("Gross Domestic Product")
+         .attr("opacity", 0.5);
+
+			// Define Y axis
+		  var yAxis = d3.svg.axis()
+							      .scale(yScale)
+                    .orient("left")
+							      .ticks(16);
+
+			//Define y axis for bar graphs
+			var yAxis1 = d3.svg.axis()
+							  		 .scale(yScale1)
+                     .orient("left")
+							       .ticks(16);
+
+		//Text label for y-axis
+     	svg.append("text")
+         .attr("transform", "rotate(-90)")
+         .attr("y", 0 - margin.left)
+         .attr("x", 0 - (svg_height / 2))
+         .attr("dy", "1em")
+         .attr("opacity", 0.5)
+         .attr("font-family", "Comic Sans Ms")
+         .style("text-anchor", "middle")
+         .text("Global Competitive Index");
+
+	    //Create X axis
+	    svg.append("g")
+	       .attr("class", "x axis")
+	       .attr("transform", "translate(0," + svg_height + ")")
+	       .call(xAxis);
+
+      svg2.append("g")
+          .attr("class", "xaxis")
+				  .attr("id", "x-axis")
+          .attr("transform", "translate(0," + svg_height + ")")
+
+			svg3.append("g")
+			 	  .attr("class", "xaxis")
+			 	  .attr("id", "x-axis")
+			 	  .attr("transform", "translate(0," + svg_height + ")")
+
+			//Create Y axis
+      svg.append("g")
+         .attr("class", "y axis")
+				 .attr("id", "y-axis")
+         .call(yAxis1);
+
+			//create y axis for bar graph
+		  svg2.append("g")
+				  .attr("class", "y axis")
+				  .call(yAxis);
+
+		  //text for y axis of bar graph
+	    svg2.append("text")
+          .attr("transform", "rotate(-90)")
+          .attr("y", 0 - margin.left)
+          .attr("x", 0 - (svg_height / 2))
+          .attr("dy", "1em")
+          .attr("opacity", 0.5)
+          .attr("font-family", "Comic Sans Ms")
+          .style("text-anchor", "middle")
+          .text("Global Competitive Index");
+
+		  //text for y axis of bar graph
+		  svg2.append("text")
+				  .attr("x", svg_width / 3 + margin.left-250)
+				  .attr("y", svg_height + margin.bottom - 23)
+				  .attr("opacity", 0.5)
+				  .attr("font-family", "Comic Sans Ms")
+				  .style("text-anchor", "middle")
+				  .text("Pillar1");
+
+			svg2.append("text")
+					.attr("x", svg_width / 3 + margin.left-195)
+					.attr("y", svg_height + margin.bottom - 23)
+					.attr("opacity", 0.5)
+					.attr("font-family", "Comic Sans Ms")
+					.style("text-anchor", "middle")
+					.text("Pillar2");
+
+			svg2.append("text")
+					.attr("x", svg_width / 3 + margin.left-140)
+					.attr("y", svg_height + margin.bottom - 23)
+					.attr("opacity", 0.5)
+					.attr("font-family", "Comic Sans Ms")
+					.style("text-anchor", "middle")
+					.text("Pillar3");
+
+			svg2.append("text")
+					.attr("x", svg_width / 3 + margin.left-90)
+					.attr("y", svg_height + margin.bottom - 23)
+					.attr("opacity", 0.5)
+					.attr("font-family", "Comic Sans Ms")
+					.style("text-anchor", "middle")
+					.text("Pillar4");
+
+			svg2.append("text")
+					.attr("x", svg_width / 3 + margin.left-40)
+					.attr("y", svg_height + margin.bottom - 23)
+					.attr("opacity", 0.5)
+					.attr("font-family", "Comic Sans Ms")
+					.style("text-anchor", "middle")
+					.text("Pillar5");
+
+			svg2.append("text")
+					.attr("x", svg_width / 3 + margin.left+10)
+					.attr("y", svg_height + margin.bottom - 23)
+					.attr("opacity", 0.5)
+					.attr("font-family", "Comic Sans Ms")
+					.style("text-anchor", "middle")
+					.text("Pillar6");
+
+		  svg2.append("text")
+				  .attr("x", svg_width / 3 + margin.left+60)
+					.attr("y", svg_height + margin.bottom - 23)
+					.attr("opacity", 0.5)
+					.attr("font-family", "Comic Sans Ms")
+					.style("text-anchor", "middle")
+					.text("Pillar7");
+
+			svg2.append("text")
+					.attr("x", svg_width / 3 + margin.left+110)
+					.attr("y", svg_height + margin.bottom - 23)
+					.attr("opacity", 0.5)
+					.attr("font-family", "Comic Sans Ms")
+					.style("text-anchor", "middle")
+					.text("Pillar8");
+
+			svg2.append("text")
+					.attr("x", svg_width / 3 + margin.left+160)
+					.attr("y", svg_height + margin.bottom - 23)
+					.attr("opacity", 0.5)
+					.attr("font-family", "Comic Sans Ms")
+					.style("text-anchor", "middle")
+					.text("Pillar9");
+
+			svg2.append("text")
+					.attr("x", svg_width / 3 + margin.left+212)
+					.attr("y", svg_height + margin.bottom - 23)
+					.attr("opacity", 0.5)
+					.attr("font-family", "Comic Sans Ms")
+					.style("text-anchor", "middle")
+					.text("Pillar10");
+
+		  svg2.append("text")
+					.attr("x", svg_width / 3 + margin.left+272)
+					.attr("y", svg_height + margin.bottom - 23)
+					.attr("opacity", 0.5)
+					.attr("font-family", "Comic Sans Ms")
+					.style("text-anchor", "middle")
+					.text("Pillar11");
+
+		  svg2.append("text")
+					.attr("x", svg_width / 3 + margin.left+325)
+					.attr("y", svg_height + margin.bottom - 23)
+					.attr("opacity", 0.5)
+					.attr("font-family", "Comic Sans Ms")
+					.style("text-anchor", "middle")
+					.text("Pillar12");
+
+			svg3.append("g")
+					.attr("class", "y axis")
+					.call(yAxis);
+
+			svg3.append("text")
+					.attr("transform", "rotate(-90)")
+					.attr("y", 0 - margin.left)
+					.attr("x", 0 - (svg_height / 2))
+					.attr("dy", "1em")
+					.attr("opacity", 0.5)
+					.attr("font-family", "Comic Sans Ms")
+					.style("text-anchor", "middle")
+					.text("Global Competitive Index");
+
+			svg3.append("text")
+ 				  .attr("x", svg_width / 3 + margin.left-250)
+ 				  .attr("y", svg_height + margin.bottom - 23)
+				  .attr("opacity", 0.5)
+				  .attr("font-family", "Comic Sans Ms")
+				  .style("text-anchor", "middle")
+				  .text("Pillar1");
+
+			svg3.append("text")
+					.attr("x", svg_width / 3 + margin.left-195)
+					.attr("y", svg_height + margin.bottom - 23)
+			  	.attr("opacity", 0.5)
+				  .attr("font-family", "Comic Sans Ms")
+					.style("text-anchor", "middle")
+					.text("Pillar2");
+
+			svg3.append("text")
+					.attr("x", svg_width / 3 + margin.left-140)
+					.attr("y", svg_height + margin.bottom - 23)
+					.attr("opacity", 0.5)
+					.attr("font-family", "Comic Sans Ms")
+					.style("text-anchor", "middle")
+					.text("Pillar3");
+
+			svg3.append("text")
+					.attr("x", svg_width / 3 + margin.left-90)
+					.attr("y", svg_height + margin.bottom - 23)
+					.attr("opacity", 0.5)
+					.attr("font-family", "Comic Sans Ms")
+					.style("text-anchor", "middle")
+					.text("Pillar4");
+
+			svg3.append("text")
+					.attr("x", svg_width / 3 + margin.left-40)
+					.attr("y", svg_height + margin.bottom - 23)
+					.attr("opacity", 0.5)
+					.attr("font-family", "Comic Sans Ms")
+				  .style("text-anchor", "middle")
+					.text("Pillar5");
+
+			svg3.append("text")
+					.attr("x", svg_width / 3 + margin.left+10)
+				  .attr("y", svg_height + margin.bottom - 23)
+					.attr("opacity", 0.5)
+				  .attr("font-family", "Comic Sans Ms")
+					.style("text-anchor", "middle")
+					.text("Pillar6");
+
+			svg3.append("text")
+					.attr("x", svg_width / 3 + margin.left+60)
+					.attr("y", svg_height + margin.bottom - 23)
+					.attr("opacity", 0.5)
+					.attr("font-family", "Comic Sans Ms")
+					.style("text-anchor", "middle")
+					.text("Pillar7");
+
+			svg3.append("text")
+			 	  .attr("x", svg_width / 3 + margin.left+110)
+				  .attr("y", svg_height + margin.bottom - 23)
+				  .attr("opacity", 0.5)
+				  .attr("font-family", "Comic Sans Ms")
+				  .style("text-anchor", "middle")
+				  .text("Pillar8");
+
+			svg3.append("text")
+					.attr("x", svg_width / 3 + margin.left+160)
+					.attr("y", svg_height + margin.bottom - 23)
+					.attr("opacity", 0.5)
+				  .attr("font-family", "Comic Sans Ms")
+					.style("text-anchor", "middle")
+					 .text("Pillar9");
+
+			svg3.append("text")
+						 .attr("x", svg_width / 3 + margin.left+212)
+						 .attr("y", svg_height + margin.bottom - 23)
+						 .attr("opacity", 0.5)
+						 .attr("font-family", "Comic Sans Ms")
+						 .style("text-anchor", "middle")
+						 .text("Pillar10");
+
+			svg3.append("text")
+						 .attr("x", svg_width / 3 + margin.left+272)
+						 .attr("y", svg_height + margin.bottom - 23)
+						 .attr("opacity", 0.5)
+						 .attr("font-family", "Comic Sans Ms")
+						 .style("text-anchor", "middle")
+						 .text("Pillar11");
+
+			svg3.append("text")
+						 .attr("x", svg_width / 3 + margin.left+325)
+						 .attr("y", svg_height + margin.bottom - 23)
+						 .attr("opacity", 0.5)
+						 .attr("font-family", "Comic Sans Ms")
+						 .style("text-anchor", "middle")
+						 .text("Pillar12");
+
+		  //Initialization of display_year text floating in the graph
+      svg.append("text")
+         .attr("y", svg_height / 1.5)
+         .attr("x", svg_width / 2)
+         .style("text-anchor", "middle")
+         .attr("id", "year")
+         .attr("class", "year")
+         .attr("opacity", 0.5)
+         .text(display_year);
+
+      // Ordinal Scaling of Regions on to Colors of circles.
+	    var fill = d3.scale.ordinal()
+	        .domain(["East Asia and Pacific", "Eurasia", "Europe and North America", "Latin America and the Caribbean", "Middle East and North Africa", "South Asia", "Sub-Saharan Africa"])
+					.range(["#e6b0aa", "#f77f4b", "#a2d9ce", "#f4d03f", "#FF3366", "#aed581", "#a569bd"]);
+
+    // function to generate vizulization
+    function generateViz() {
+
+    // Filtering with no of years
+       var filtered_dataset = dataset.filter(yearFilter);
+
+		//filtering dataset with country number1
+			 var selected_country = filtered_dataset.filter(function(d,i)
+			 {
+				 if(d["Country"] == checkedArr[0] )
+				 {
+					 return d;
+				 }
+			 });
+
+		//filtering dataset with country number2
+			 var selected_country1 = filtered_dataset.filter(function(d,i)
+			 {
+			 	if(d["Country"] == checkedArr[1] )
+			 	{
+			 		return d;
+			 	}
+			 });
+
+			 //xScale1.domain(selected_country.map(function(d) { return d.Country; }));
+			 svg2.select("#x-axis").call(xAxis1);
+			 svg3.select("#x-axis").call(xAxis1);
+
+			 //Data join for generation trace
+			 var trace = svg.selectAll("circle").data(filtered_dataset);
+
+      //Perform data join
+      var circles = svg.selectAll(".data_circles")
+                       .data(filtered_dataset, function key(d) {
+												 countrySelect.push(d.Country);
+               					return d.Country
+    							});
+			//variables for setting the values of pillar
+			var pillar1 = 	svg2.selectAll("rect")
+			   .data(selected_country, function key(d) {
+										return d.Country;
+									});
+
+			var pillar2 = 	svg2.selectAll("r1")
+			.data(selected_country, function key(d) {
+									return d.Country;
+								});
+
+			var pillar3 = 	svg2.selectAll("r2")
+			.data(selected_country, function key(d) {
+									return d.Country;
+								});
+
+			var pillar4 = 	svg2.selectAll("r3")
+		   .data(selected_country, function key(d) {
+									return d.Country;
+								});
+
+			var pillar5 = 	svg2.selectAll("r4")
+			.data(selected_country, function key(d) {
+									return d.Country;
+								});
+
+			var pillar6 = 	svg2.selectAll("r5")
+			.data(selected_country, function key(d) {
+									return d.Country;
+								});
+
+			var pillar7 = 	svg2.selectAll("r6")
+		   .data(selected_country, function key(d) {
+									return d.Country;
+								});
+
+			var pillar8 = 	svg2.selectAll("r7")
+			.data(selected_country, function key(d) {
+									return d.Country;
+								});
+
+			var pillar9 = 	svg2.selectAll("r8")
+			.data(selected_country, function key(d) {
+									return d.Country;
+								});
+
+			var pillar10 = 	svg2.selectAll("r9")
+		   .data(selected_country, function key(d) {
+									return d.Country;
+								});
+
+			var pillar11 = 	svg2.selectAll("r10")
+			.data(selected_country, function key(d) {
+									return d.Country;
+								});
+
+			var pillar12 = 	svg2.selectAll("r11")
+			.data(selected_country, function key(d) {
+									return d.Country;
+								});
+
+			var s_pillar1 = 	svg3.selectAll("rect")
+		   .data(selected_country1, function key(d) {
+									return d.Country;
+								});
+
+			var s_pillar2 = 	svg3.selectAll("r1")
+			.data(selected_country1, function key(d) {
+									return d.Country;
+								});
+
+			var s_pillar3 = 	svg3.selectAll("r2")
+			.data(selected_country1, function key(d) {
+									return d.Country;
+								});
+
+			var s_pillar4 = 	svg3.selectAll("r3")
+		   .data(selected_country1, function key(d) {
+									return d.Country;
+								});
+
+			var s_pillar5 = 	svg3.selectAll("r4")
+			.data(selected_country1, function key(d) {
+									return d.Country;
+								});
+
+			var s_pillar6 = 	svg3.selectAll("r5")
+			.data(selected_country1, function key(d) {
+									return d.Country;
+								});
+
+			var s_pillar7 = 	svg3.selectAll("r6")
+		   .data(selected_country1, function key(d) {
+									return d.Country;
+								});
+
+			var s_pillar8 = 	svg3.selectAll("r7")
+			.data(selected_country1, function key(d) {
+									return d.Country;
+								});
+
+			var s_pillar9 = 	svg3.selectAll("r8")
+			.data(selected_country1, function key(d) {
+									return d.Country;
+								});
+
+			var s_pillar10 = 	svg3.selectAll("r9")
+		   .data(selected_country1, function key(d) {
+									return d.Country;
+								});
+
+			var s_pillar11 = 	svg3.selectAll("r10")
+			.data(selected_country1, function key(d) {
+									return d.Country;
+								});
+
+			var s_pillar12 = 	svg3.selectAll("r11")
+			.data(selected_country1, function key(d) {
+									return d.Country;
+								});
+
+			if (click == 1)
+			{
+				trace.remove();
+				click = 0;
+			}
+
+		//create new element in dataset
+		pillar1.enter()
+				   .append("rect")
+				   .attr("x", 10)
+				   .attr("y", function(d) {
+						 return yScale1(+d.P1);
+				     })
+				   .attr("width", 40)
+				   .attr("height", function(d) {
+						return svg_height - yScale1(+d.P1);
+				 })
+				 .attr("fill", function(d) {
+						 return fill(d.Forum_classification);
+				 });
+
+		pillar2.enter()
+		 			 .append("rect")
+		 			 .attr("x", 60)
+		 			 .attr("y", function(d) {
+		 					 return yScale1(+d.P2);
+		 			 })
+		 			 .attr("width", 40)
+		 			 .attr("height", function(d) {
+		 					return svg_height - yScale1(+d.P2);
+		 			 })
+					 .attr("fill", function(d) {
+							 return fill(d.Forum_classification);
+					 });
+
+		 pillar3.enter()
+ 				 .append("rect")
+ 				 .attr("x", 110)
+ 				 .attr("y", function(d) {
+ 						 return yScale1(+d.P3);
+ 				 })
+ 				 .attr("width", 40)
+ 				 .attr("height", function(d) {
+ 						return svg_height - yScale1(+d.P3);
+ 				 })
+				 .attr("fill", function(d) {
+						 return fill(d.Forum_classification);
+				 });
+
+ 		pillar4.enter()
+ 		 			 .append("rect")
+ 		 			 .attr("x", 160)
+ 		 			 .attr("y", function(d) {
+ 		 					 return yScale1(+d.P4);
+ 		 			 })
+ 		 			 .attr("width", 40)
+ 		 			 .attr("height", function(d) {
+ 		 					return svg_height - yScale1(+d.P4);
+ 		 			 })
+					 .attr("fill", function(d) {
+							 return fill(d.Forum_classification);
+					 });
+
+			 pillar5.enter()
+	 				 .append("rect")
+	 				 .attr("x", 210)
+	 				 .attr("y", function(d) {
+	 						 return yScale1(+d.P5);
+	 				 })
+	 				 .attr("width", 40)
+	 				 .attr("height", function(d) {
+	 						return svg_height - yScale1(+d.P5);
+	 				 })
+					 .attr("fill", function(d) {
+							 return fill(d.Forum_classification);
+					 });
+
+	 		pillar6.enter()
+	 		 			 .append("rect")
+	 		 			 .attr("x", 260)
+	 		 			 .attr("y", function(d) {
+	 		 					 return yScale1(+d.P6);
+	 		 			 })
+	 		 			 .attr("width", 40)
+	 		 			 .attr("height", function(d) {
+	 		 					return svg_height - yScale1(+d.P6);
+	 		 			 })
+						 .attr("fill", function(d) {
+								 return fill(d.Forum_classification);
+						 });
+
+	 pillar7.enter()
+				 .append("rect")
+				 .attr("x", 310)
+				 .attr("y", function(d) {
+						 return yScale1(+d.P7);
+				 })
+				 .attr("width", 40)
+				 .attr("height", function(d) {
+						return svg_height - yScale1(+d.P7);
+				 })
+				 .attr("fill", function(d) {
+						 return fill(d.Forum_classification);
+				 });
+
+		pillar8.enter()
+		 			 .append("rect")
+		 			 .attr("x", 360)
+		 			 .attr("y", function(d) {
+		 					 return yScale1(+d.P8);
+		 			 })
+		 			 .attr("width", 40)
+		 			 .attr("height", function(d) {
+		 					return svg_height - yScale1(+d.P8);
+		 			 })
+					 .attr("fill", function(d) {
+							 return fill(d.Forum_classification);
+					 });
+
+	 pillar9.enter()
+	 			 .append("rect")
+	 			 .attr("x", 410)
+	 			 .attr("y", function(d) {
+	 					 return yScale1(+d.P9);
+	 			 })
+	 			 .attr("width", 40)
+	 			 .attr("height", function(d) {
+	 					return svg_height - yScale1(+d.P9);
+	 			 })
+				 .attr("fill", function(d) {
+						 return fill(d.Forum_classification);
+				 });
+
+	 pillar10.enter()
+			 .append("rect")
+			 .attr("x", 460)
+			 .attr("y", function(d) {
+					 return yScale1(+d.P10);
+			 })
+			 .attr("width", 40)
+			 .attr("height", function(d) {
+					return svg_height - yScale1(+d.P10);
+			 })
+			 .attr("fill", function(d) {
+					 return fill(d.Forum_classification);
+			 });
+
+			pillar11.enter()
+						 .append("rect")
+						 .attr("x", 510)
+						 .attr("y", function(d) {
+								 return yScale1(+d.P11);
+						 })
+						 .attr("width", 40)
+						 .attr("height", function(d) {
+								return svg_height - yScale1(+d.P11);
+						 })
+						 .attr("fill", function(d) {
+								 return fill(d.Forum_classification);
+						 });
+
+		 pillar12.enter()
+		 			 .append("rect")
+		 			 .attr("x", 560)
+		 			 .attr("y", function(d) {
+		 					 return yScale1(+d.P11);
+		 			 })
+		 			 .attr("width", 40)
+		 			 .attr("height", function(d) {
+		 					return svg_height - yScale1(+d.P11);
+		 			 })
+					 .attr("fill", function(d) {
+							 return fill(d.Forum_classification);
+					 });
+
+			s_pillar1.enter()
+					 .append("rect")
+					 .attr("x", 10)
+					 .attr("y", function(d) {
+							 return yScale1(+d.P1);
+					 })
+					 .attr("width", 40)
+					 .attr("height", function(d) {
+							return svg_height - yScale1(+d.P1);
+					 })
+					 .attr("fill", function(d) {
+							 return fill(d.Forum_classification);
+					 });
+
+			s_pillar2.enter()
+						 .append("rect")
+						 .attr("x", 60)
+						 .attr("y", function(d) {
+								 return yScale1(+d.P2);
+						 })
+						 .attr("width", 40)
+						 .attr("height", function(d) {
+								return svg_height - yScale1(+d.P2);
+						 })
+						 .attr("fill", function(d) {
+								 return fill(d.Forum_classification);
+						 });
+
+			 s_pillar3.enter()
+					 .append("rect")
+					 .attr("x", 110)
+					 .attr("y", function(d) {
+							 return yScale1(+d.P3);
+					 })
+					 .attr("width", 40)
+					 .attr("height", function(d) {
+							return svg_height - yScale1(+d.P3);
+					 })
+					 .attr("fill", function(d) {
+							 return fill(d.Forum_classification);
+					 });
+
+			s_pillar4.enter()
+						 .append("rect")
+						 .attr("x", 160)
+						 .attr("y", function(d) {
+								 return yScale1(+d.P4);
+						 })
+						 .attr("width", 40)
+						 .attr("height", function(d) {
+								return svg_height - yScale1(+d.P4);
+						 })
+						 .attr("fill", function(d) {
+								 return fill(d.Forum_classification);
+						 });
+
+	 	  s_pillar5.enter()
+							 			 .append("rect")
+							 			 .attr("x", 210)
+							 			 .attr("y", function(d) {
+							 					 return yScale1(+d.P5);
+							 			 })
+							 			 .attr("width", 40)
+							 			 .attr("height", function(d) {
+							 					return svg_height - yScale1(+d.P5);
+							 			 })
+										 .attr("fill", function(d) {
+												 return fill(d.Forum_classification);
+										 });
+
+			s_pillar6.enter()
+						 .append("rect")
+						 .attr("x", 260)
+						 .attr("y", function(d) {
+								 return yScale1(+d.P6);
+						 })
+						 .attr("width", 40)
+						 .attr("height", function(d) {
+								return svg_height - yScale1(+d.P6);
+						 })
+						 .attr("fill", function(d) {
+								 return fill(d.Forum_classification);
+						 });
+
+			 s_pillar7.enter()
+					 .append("rect")
+					 .attr("x", 310)
+					 .attr("y", function(d) {
+							 return yScale1(+d.P7);
+					 })
+					 .attr("width", 40)
+					 .attr("height", function(d) {
+							return svg_height - yScale1(+d.P7);
+					 })
+					 .attr("fill", function(d) {
+							 return fill(d.Forum_classification);
+					 });
+
+				s_pillar8.enter()
+							 .append("rect")
+							 .attr("x", 360)
+							 .attr("y", function(d) {
+									 return yScale1(+d.P8);
+							 })
+							 .attr("width", 40)
+							 .attr("height", function(d) {
+									return svg_height - yScale1(+d.P8);
+							 })
+							 .attr("fill", function(d) {
+									 return fill(d.Forum_classification);
+							 });
+
+			 	 s_pillar9.enter()
+			 				 .append("rect")
+			 				 .attr("x", 410)
+			 				 .attr("y", function(d) {
+			 						 return yScale1(+d.P9);
+			 				 })
+			 				 .attr("width", 40)
+			 				 .attr("height", function(d) {
+			 						return svg_height - yScale1(+d.P9);
+			 				 })
+							 .attr("fill", function(d) {
+									 return fill(d.Forum_classification);
+							 });
+
+				  s_pillar10.enter()
+				 		 .append("rect")
+				 		 .attr("x", 460)
+				 		 .attr("y", function(d) {
+				 				 return yScale1(+d.P10);
+				 		 })
+				 		 .attr("width", 40)
+				 		 .attr("height", function(d) {
+				 				return svg_height - yScale1(+d.P10);
+				 		 })
+						 .attr("fill", function(d) {
+								 return fill(d.Forum_classification);
+						 });
+
+			 			s_pillar11.enter()
+			 						 .append("rect")
+			 						 .attr("x", 510)
+			 						 .attr("y", function(d) {
+			 								 return yScale1(+d.P11);
+			 						 })
+			 						 .attr("width", 40)
+			 						 .attr("height", function(d) {
+			 								return svg_height - yScale1(+d.P11);
+			 						 })
+									 .attr("fill", function(d) {
+											 return fill(d.Forum_classification);
+									 });
+
+		 		 s_pillar12.enter()
+		 					 .append("rect")
+		 					 .attr("x", 560)
+		 					 .attr("y", function(d) {
+		 							 return yScale1(+d.P11);
+		 					 })
+		 					 .attr("width", 40)
+		 					 .attr("height", function(d) {
+		 							return svg_height - yScale1(+d.P11);
+		 					 })
+							 .attr("fill", function(d) {
+									 return fill(d.Forum_classification);
+							 });
+
+			pillar1.attr("x", 10)
+				 			.attr("y", function(d) {
+				 					return yScale1(+d.P1);
+				 			})
+				 			.attr("width", 40)
+				 			.attr("height", function(d) {
+				 				 return svg_height - yScale1(+d.P1);
+				 			})
+							.attr("fill", function(d) {
+	 							 return fill(d.Forum_classification);
+	 					 });
+
+			pillar2.attr("x", 60)
+						.attr("y", function(d) {
+								return yScale1(+d.P2);
+						})
+						.attr("width", 40)
+						.attr("height", function(d) {
+							 return svg_height - yScale1(+d.P2);
+						})
+						.attr("fill", function(d) {
+ 							 return fill(d.Forum_classification);
+ 					 });
+
+				pillar3.attr("x", 110)
+								.attr("y", function(d) {
+										return yScale1(+d.P3);
+								})
+								.attr("width", 40)
+								.attr("height", function(d) {
+									 return svg_height - yScale1(+d.P3);
+								})
+								.attr("fill", function(d) {
+		 							 return fill(d.Forum_classification);
+		 					 });
+
+				pillar4.attr("x", 160)
+							.attr("y", function(d) {
+									return yScale1(+d.P4);
+							})
+							.attr("width", 40)
+							.attr("height", function(d) {
+								 return svg_height - yScale1(+d.P4);
+							})
+							.attr("fill", function(d) {
+	 							 return fill(d.Forum_classification);
+	 					 });
+
+			pillar5.attr("x", 210)
+				 			.attr("y", function(d) {
+				 					return yScale1(+d.P5);
+				 			})
+				 			.attr("width", 40)
+				 			.attr("height", function(d) {
+				 				 return svg_height - yScale1(+d.P5);
+				 			})
+							.attr("fill", function(d) {
+	 							 return fill(d.Forum_classification);
+	 					 });
+
+			pillar6.attr("x", 260)
+						.attr("y", function(d) {
+								return yScale1(+d.P6);
+						})
+						.attr("width", 40)
+						.attr("height", function(d) {
+							 return svg_height - yScale1(+d.P6);
+						})
+						.attr("fill", function(d) {
+ 							 return fill(d.Forum_classification);
+ 					 });
+
+				pillar7.attr("x", 310)
+								.attr("y", function(d) {
+										return yScale1(+d.P7);
+								})
+								.attr("width", 40)
+								.attr("height", function(d) {
+									 return svg_height - yScale1(+d.P7);
+								})
+								.attr("fill", function(d) {
+		 							 return fill(d.Forum_classification);
+		 					 });
+
+				pillar8.attr("x", 360)
+							.attr("y", function(d) {
+									return yScale1(+d.P8);
+							})
+							.attr("width", 40)
+							.attr("height", function(d) {
+								 return svg_height - yScale1(+d.P8);
+							})
+							.attr("fill", function(d) {
+	 							 return fill(d.Forum_classification);
+	 					 });
+
+				pillar9.attr("x", 410)
+					 			.attr("y", function(d) {
+					 					return yScale1(+d.P9);
+					 			})
+					 			.attr("width", 40)
+					 			.attr("height", function(d) {
+					 				 return svg_height - yScale1(+d.P9);
+					 			})
+								.attr("fill", function(d) {
+		 							 return fill(d.Forum_classification);
+		 					 });
+
+				pillar10.attr("x", 460)
+							.attr("y", function(d) {
+									return yScale1(+d.P10);
+							})
+							.attr("width", 40)
+							.attr("height", function(d) {
+								 return svg_height - yScale1(+d.P10);
+							})
+							.attr("fill", function(d) {
+	 							 return fill(d.Forum_classification);
+	 					 });
+
+					pillar11.attr("x", 510)
+									.attr("y", function(d) {
+											return yScale1(+d.P11);
+									})
+									.attr("width", 40)
+									.attr("height", function(d) {
+										 return svg_height - yScale1(+d.P11);
+									})
+									.attr("fill", function(d) {
+			 							 return fill(d.Forum_classification);
+			 					 });
+
+					pillar12.attr("x", 560)
+								.attr("y", function(d) {
+										return yScale1(+d.P12);
+								})
+								.attr("width", 40)
+								.attr("height", function(d) {
+									 return svg_height - yScale1(+d.P12);
+								})
+								.attr("fill", function(d) {
+		 							 return fill(d.Forum_classification);
+		 					 });
+
+			s_pillar1.attr("x", 10)
+							.attr("y", function(d) {
+									return yScale1(+d.P1);
+							})
+							.attr("width", 40)
+							.attr("height", function(d) {
+								 return svg_height - yScale1(+d.P1);
+							})
+							.attr("fill", function(d) {
+	 							 return fill(d.Forum_classification);
+	 					 });
+
+			s_pillar2.attr("x", 60)
+						.attr("y", function(d) {
+								return yScale1(+d.P2);
+						})
+						.attr("width", 40)
+						.attr("height", function(d) {
+							 return svg_height - yScale1(+d.P2);
+						})
+						.attr("fill", function(d) {
+ 							 return fill(d.Forum_classification);
+ 					 });
+
+				s_pillar3.attr("x", 110)
+								.attr("y", function(d) {
+										return yScale1(+d.P3);
+								})
+								.attr("width", 40)
+								.attr("height", function(d) {
+									 return svg_height - yScale1(+d.P3);
+								})
+								.attr("fill", function(d) {
+		 							 return fill(d.Forum_classification);
+		 					 });
+
+		s_pillar4.attr("x", 160)
+					.attr("y", function(d) {
+							return yScale1(+d.P4);
+					})
+					.attr("width", 40)
+					.attr("height", function(d) {
+						 return svg_height - yScale1(+d.P4);
+					})
+					.attr("fill", function(d) {
+							return fill(d.Forum_classification);
+					});
+
+				s_pillar5.attr("x", 210)
+								.attr("y", function(d) {
+										return yScale1(+d.P5);
+								})
+								.attr("width", 40)
+								.attr("height", function(d) {
+									 return svg_height - yScale1(+d.P5);
+								})
+								.attr("fill", function(d) {
+		 							 return fill(d.Forum_classification);
+		 					 });
+
+				s_pillar6.attr("x", 260)
+							.attr("y", function(d) {
+									return yScale1(+d.P6);
+							})
+							.attr("width", 40)
+							.attr("height", function(d) {
+								 return svg_height - yScale1(+d.P6);
+							})
+							.attr("fill", function(d) {
+	 							 return fill(d.Forum_classification);
+	 					 });
+
+					s_pillar7.attr("x", 310)
+									.attr("y", function(d) {
+											return yScale1(+d.P7);
+									})
+									.attr("width", 40)
+									.attr("height", function(d) {
+										 return svg_height - yScale1(+d.P7);
+									})
+									.attr("fill", function(d) {
+			 							 return fill(d.Forum_classification);
+			 					 });
+
+					s_pillar8.attr("x", 360)
+								.attr("y", function(d) {
+										return yScale1(+d.P8);
+								})
+								.attr("width", 40)
+								.attr("height", function(d) {
+									 return svg_height - yScale1(+d.P8);
+								})
+								.attr("fill", function(d) {
+		 							 return fill(d.Forum_classification);
+		 					 });
+
+		s_pillar9.attr("x", 410)
+						.attr("y", function(d) {
+								return yScale1(+d.P9);
+						})
+						.attr("width", 40)
+						.attr("height", function(d) {
+							 return svg_height - yScale1(+d.P9);
+						})
+						.attr("fill", function(d) {
+ 							 return fill(d.Forum_classification);
+ 					 });
+
+		s_pillar10.attr("x", 460)
+					.attr("y", function(d) {
+							return yScale1(+d.P10);
+					})
+					.attr("width", 40)
+					.attr("height", function(d) {
+						 return svg_height - yScale1(+d.P10);
+					})
+					.attr("fill", function(d) {
+							return fill(d.Forum_classification);
+					});
+
+			s_pillar11.attr("x", 510)
+							.attr("y", function(d) {
+									return yScale1(+d.P11);
+							})
+							.attr("width", 40)
+							.attr("height", function(d) {
+								 return svg_height - yScale1(+d.P11);
+							})
+							.attr("fill", function(d) {
+									return fill(d.Forum_classification);
+							});
+
+			s_pillar12.attr("x", 560)
+						.attr("y", function(d) {
+								return yScale1(+d.P12);
+						})
+						.attr("width", 40)
+						.attr("height", function(d) {
+							 return svg_height - yScale1(+d.P12);
+						})
+						.attr("fill", function(d) {
+ 							 return fill(d.Forum_classification);
+ 					 });
+
+	//Update Selection
+		circles.transition()
+					 .duration(1000)
+					 .ease("linear")
+					 .attr("cx", function(d) {
+							 return xScale(+d.GDP);
+					 })
+					 .attr("cy", function(d) {
+							 return yScale(+d.Global_Competitiveness_Index);
+					 })
+					 .attr("r", function(d) {
+							 return rScale(+d.Population);
+					 })
+					 .style("stroke", "black")
+					 .style("stroke-width", 1)
+					 .attr("opacity", 0.9)
+					 .style("stroke-opacity", 0.3)
+					 .attr("fill", function(d) {
+							 return fill(d.Forum_classification);
+					 });
+
+			 // Text label for Year in background
+			 svg.select("#year")
+					 .attr("y", svg_height / 1.5)
+					 .attr("x", svg_width / 2)
+					 .style("text-anchor", "middle")
+					 .attr("class", "year")
+					 .text(display_year);
+
+			//Country name for graph 1
+			 // var text1 = svg2.append("text")
+				// 			text1.attr("y", svg_height / 1.5-170)
+				// 			.attr("x", svg_width / 2+ 200)
+				// 			.style("text-anchor", "middle")
+				// 			.attr("id", "year1")
+				// 			.attr("class", "cntry")
+				// 			.attr("opacity", 0.5)
+				// 			.text(checkedArr[0]);
+			 //
+				//  svg3.append("text")
+				// 		 .attr("y", svg_height / 1.5-170)
+				// 		 .attr("x", svg_width / 2+ 200)
+				// 		 .style("text-anchor", "middle")
+				// 		 .attr("id", "year2")
+				// 		 .attr("class", "cntry")
+				// 		 .attr("opacity", 0.5)
+				// 		 .text(checkedArr[1]);
+
+    // create new element in dataset
+    	circles.enter()
+             .append("circle")
+             .attr("class", "data_circles")
+             .attr("cx", function(d) {
+                    return xScale(+d.GDP);
+                })
+             .attr("cy", function(d) {
+                    return yScale(+d.Global_Competitiveness_Index);
+                })
+             .attr("r", function(d) {
+                    return rScale(+d.Population);
+                })
+             .attr("stroke-opacity", 0.3)
+             .attr("fill", function(d) {
+                    return fill(d.Forum_classification);
+                })
+             .attr("opacity", 0.9)
+						 .attr()
+             .style("stroke", "black");
+
+			//Handling mouse hover functionality
+			var mouseHoverOn = function() {
+			//change the opacity of background
+												circles.style("opacity",.2)
+			                  var circle = d3.select(this);
+
+			//highlight the hovered circle by changing the opacity
+								        circle.transition()
+										          .duration(10).style("opacity", 0.9)
+								        circle.append("title")
+										          .text(function(d) {
+												         return d.Country +', GDP: '+ d.GDP + ', GCI: '+ d.Global_Competitiveness_Index
+										          })
+
+								           svg.append("g")
+								              .attr("class", "detailInfo")
+							                .append("line")
+								              .attr("x1", circle.attr("cx") - 40)
+								              .attr("x2", circle.attr("cx") - 40)
+															.attr("y1", circle.attr("cy") - 20)
+															.attr("y2", svg_height - 20)
+															.attr("transform", "translate(40,20)")
+															.style("stroke", "black")
+															.transition().delay(200).duration(450).styleTween("opacity",
+															function() {
+																return d3.interpolate(1, .5);
+															})
+
+													 svg.append("g")
+															.attr("class","detailInfo")
+															.append("line")
+															.attr("y1", circle.attr("cy") - 40)
+															.attr("y2", circle.attr("cy") - 40)
+															.attr("x1", circle.attr("cx") - 45)
+		              						.attr("x2", 0 - margin.left + 20)
+															.attr("transform", "translate(40,40)")
+															.style("stroke", "black")
+															.transition().delay(200).duration(450).styleTween("opacity",
+															function() {
+																return d3.interpolate(1, .5);
+															})
+														};
+
+				//Remove the opacity effect and make all circle visible
+					 var mouseHoverOff = function() {
+					             circles.style("opacity",0.9)
+					             var circle = d3.select(this);
+					                          d3.selectAll(".detailInfo").transition()
+							                        .duration(10).styleTween("opacity", function() {
+									           return d3.interpolate(.5, 1);
+							 })
+							                        .remove()
+			 };
+
+				// to generate the static trace for a pirticular country
+				 var mouseclick = function(d){
+				 country = d.Country
+				 click = 1
+				 var country_data = dataset.filter(countryFilter);
+
+				 //remove all the present circles
+				 circles.remove();
+
+				 var trace = svg.selectAll("circle")
+						 						.data(country_data)
+									 trace.attr("cx", function(d) {
+																return xScale(+d.GDP);
+														})
+												.attr("cy", function(d) {
+																return yScale(+d.Global_Competitiveness_Index);
+														})
+												.attr("r", function(d) {
+																return rScale(+d.Population);
+														})
+												.style("stroke", "black")
+								 				.style("stroke-width", 1)
+								 				.attr("opacity", 1)
+								 				.style("stroke-opacity", 0.3)
+												.attr("fill", function(d) {
+								 							 return fill(d.Forum_classification);
+								 					 });
+
+				// enter section for the trace
+										trace.enter()
+												 .append("circle")
+													 .attr("cx", function(d) {
+															 return xScale(+d.GDP);
+													 })
+													 .attr("cy", function(d) {
+															 return yScale(+d.Global_Competitiveness_Index);
+													 })
+													 .attr("r", function(d) {
+															 return rScale(+d.Population);
+													 })
+													 .style("stroke", "black")
+													 .style("stroke-width", 1)
+													 .attr("opacity", 1)
+													 .style("stroke-opacity", 0.3)
+													 .attr("fill", function(d) {
+															return fill(d.Forum_classification);
+													});
+					 };
+
+			 circles.on("mouseover", mouseHoverOn);
+			 circles.on("mouseout", mouseHoverOff);
+			 circles.on("click", mouseclick);
+			 circles.exit()
+			 .remove();
+			 pillar1.exit()
+			 .remove();
+			 s_pillar1.exit()
+			 .remove();
+			 	}
+
+		// create list of countries and added the selected countries in an array: checkedArr
+		function countryList(){
+							 svg1.append("foreignObject")
+									 .attr("width", 200)
+									 .attr("height", 500)
+									 .append("xhtml:body")
+									 .html("<div class = countrySelect id = countrySelect> </div>")
+									 .on("click", addCheckedElements);
+								 var arr = []
+								 for (var option in countrySelect) {
+										label= document.createElement("label");
+										pair = countrySelect[option];
+										checkbox = document.createElement("input");
+										checkbox.type = "checkbox";
+										checkbox.name = pair;
+										checkbox.value = pair;
+										label.appendChild(checkbox);
+										label.appendChild(document.createTextNode(pair));
+										label.appendChild(document.createElement("br"));
+										document.getElementById('countrySelect').appendChild(label);
+										arr.push(checkbox)
+								 }
+
+					function addCheckedElements(){
+						checkedArr = []
+							for(var x in arr){
+								if (arr[x].checked == true)
+								{
+									checkedArr.push(arr[x].name)
+								}
+							}
+							var text1 = svg2.append("text")
+			 							text1.attr("y", svg_height / 1.5-170)
+			 							.attr("x", svg_width / 2+ 200)
+			 							.style("text-anchor", "middle")
+			 							.attr("id", "year1")
+			 							.attr("class", "cntry")
+			 							.attr("opacity", 0.5)
+			 							.text(checkedArr[0]);
+
+			 				 svg3.append("text")
+			 						 .attr("y", svg_height / 1.5-170)
+			 						 .attr("x", svg_width / 2+ 200)
+			 						 .style("text-anchor", "middle")
+			 						 .attr("id", "year2")
+			 						 .attr("class", "cntry")
+			 						 .attr("opacity", 0.5)
+			 						 .text(checkedArr[1]);
+
+							generateViz();
+							year1.remove();
+							year2.remove();
+					}
+
+		}
+
+	</script>
+  <script>
+		// Read file and call generateViz() function
+      d3.csv("./GCI_CompleteData4.csv", function(error, data) {
+          if (error) {
+              console.log("Something went wrong");
+          } else {
+              console.log("Data has been loaded");
+              dataset = data;
+              generateViz();
+							countryList();
+
+          }
+      });
+
+		//Button that exhibits both play and pause functionality with the help of playpauseFlag variable
+		d3.select(".playpauseBtn")
+	         .on("click", function() {
+		 if (playpauseFlag == 0) {
+		 playpauseFlag = 1
+		 var buttonPause = document.getElementById("playpauseBtn");
+		 buttonPause.innerHTML = '<img src="btnPause.png" style="height:35px;width:35px" alt="Submit"/>';
+		 playInterval = setInterval(function() {
+		                    display_year++;
+		                if (display_year > 2017) {
+		                    display_year = 2007;
+		                }
+		                document.getElementById("year").value = display_year;
+		                generateViz();
+		            }, 1000);
+							}
+	  else {
+		 playpauseFlag = 0
+		 var buttonPause = document.getElementById("playpauseBtn");
+		 buttonPause.innerHTML = '<img src="btnPlay.png" style="height:35px;width:35px" alt="Submit"/>';
+		 clearInterval(playInterval)
+		 generateViz()
+	}
+});
+
+		//slider functionality
+		function sliderValue(value) {
+				display_year = value;
+			playpauseFlag = 0
+			var buttonPause = document.getElementById("playpauseBtn");
+			buttonPause.innerHTML = '<img src="btnPlay.png" style="height:35px;width:35px" alt="Submit"/>';
+			clearInterval(playInterval)
+			var sliderCreated = document.getElementById("year")
+				generateViz();
+				clearInterval(playInterval);
+		}
+		var sliderCreated = document.getElementById("year")
+ </script>
+ </div>
+</body>
+</html>
